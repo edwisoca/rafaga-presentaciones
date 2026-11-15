@@ -53,7 +53,7 @@ pub struct Tokens {
 }
 
 impl Tokens {
-    pub fn light() -> Self {
+    fn light_base() -> Self {
         Tokens {
             dark: false,
             chrome: Color32::from_rgb(0xF5, 0xF5, 0xF5),
@@ -85,7 +85,7 @@ impl Tokens {
             shadow: Color32::from_black_alpha(28),
         }
     }
-    pub fn dark() -> Self {
+    fn dark_base() -> Self {
         Tokens {
             dark: true,
             chrome: Color32::from_rgb(0x26, 0x26, 0x26),
@@ -117,6 +117,12 @@ impl Tokens {
             shadow: Color32::from_black_alpha(90),
         }
     }
+    pub fn light() -> Self {
+        host_override(Tokens::light_base())
+    }
+    pub fn dark() -> Self {
+        host_override(Tokens::dark_base())
+    }
     pub fn for_brightness(b: Brightness) -> Self {
         match b {
             Brightness::Light => Self::light(),
@@ -126,6 +132,83 @@ impl Tokens {
     pub fn get(ctx: &egui::Context) -> Self {
         if ctx.global_style().visuals.dark_mode { Self::dark() } else { Self::light() }
     }
+}
+
+/// Ráfaga: colores que el anfitrión (la ventana de Ráfaga) pasa a la aplicación incrustada.
+/// Cada campo es opcional; lo que no llega se queda con la paleta propia de la aplicación.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct HostTheme {
+    pub dark: bool,
+    pub accent: Option<Color32>,
+    pub on_accent: Option<Color32>,
+    pub surface: Option<Color32>,
+    pub bg: Option<Color32>,
+    pub line: Option<Color32>,
+    pub text: Option<Color32>,
+    pub muted: Option<Color32>,
+    pub hover: Option<Color32>,
+    pub soft: Option<Color32>,
+}
+
+static HOST_THEME: std::sync::OnceLock<HostTheme> = std::sync::OnceLock::new();
+
+/// Fija los colores del anfitrión; solo se puede una vez, al arrancar.
+pub fn set_host_theme(h: HostTheme) {
+    let _ = HOST_THEME.set(h);
+}
+
+/// Mezcla `a` con `b` (`t` de 0 a 1).
+fn mix(a: Color32, b: Color32, t: f32) -> Color32 {
+    let m = |x: u8, y: u8| (x as f32 + (y as f32 - x as f32) * t).round() as u8;
+    Color32::from_rgb(m(a.r(), b.r()), m(a.g(), b.g()), m(a.b(), b.b()))
+}
+
+fn host_override(mut t: Tokens) -> Tokens {
+    let Some(h) = HOST_THEME.get() else { return t };
+    if h.dark != t.dark {
+        return t;
+    }
+    let (white, black) = (Color32::WHITE, Color32::BLACK);
+    if let Some(sf) = h.surface {
+        t.card = sf;
+        t.field_bg = sf;
+    }
+    if let Some(bg) = h.bg {
+        t.chrome = bg;
+        t.canvas = mix(bg, black, if t.dark { 0.25 } else { 0.06 });
+        t.text_field = mix(bg, h.surface.unwrap_or(t.card), 0.5);
+    }
+    if let Some(l) = h.line {
+        t.card_border = l;
+        t.separator = l;
+        t.border = mix(l, if t.dark { white } else { black }, 0.15);
+        t.control = l;
+        t.control_hover = mix(l, if t.dark { white } else { black }, 0.12);
+        t.control_pressed = mix(l, if t.dark { white } else { black }, 0.24);
+    }
+    if let Some(x) = h.text {
+        t.text = x;
+    }
+    if let Some(m) = h.muted {
+        t.text_dim = m;
+        t.text_faint = mix(m, h.surface.unwrap_or(t.card), 0.4);
+    }
+    if let Some(x) = h.hover {
+        t.hover = x;
+        t.pressed = mix(x, h.accent.unwrap_or(t.accent), 0.18);
+    }
+    if let Some(x) = h.soft {
+        t.selected = x;
+    }
+    if let Some(a) = h.accent {
+        t.accent = a;
+        t.contextual = mix(a, black, 0.15);
+        t.guide = a;
+    }
+    if let Some(o) = h.on_accent {
+        t.accent_text = o;
+    }
+    t
 }
 
 /// Apply tokens to egui's style.

@@ -79,6 +79,36 @@ pub fn start() {
                     {
                         crate::host::Bridge::set_author(&mut app, &author);
                     }
+                    // Ráfaga también pasa sus colores (`?theme=dark|light&ac=#rrggbb&…`): la app los usa en vez de los suyos.
+                    let host_dark = query_param("theme").map(|mode| {
+                        use deckcraft_ui_egui::theme::{self, HostTheme};
+                        let col = |k: &str| {
+                            let v = query_param(k)?;
+                            let v = v.trim().trim_start_matches('#');
+                            if v.len() != 6 {
+                                return None;
+                            }
+                            let n = u32::from_str_radix(v, 16).ok()?;
+                            Some(egui::Color32::from_rgb((n >> 16) as u8, (n >> 8) as u8, n as u8))
+                        };
+                        let dark = mode == "dark";
+                        theme::set_host_theme(HostTheme {
+                            dark,
+                            accent: col("ac"),
+                            on_accent: col("acf"),
+                            surface: col("sf"),
+                            bg: col("bg"),
+                            line: col("ln"),
+                            text: col("fg"),
+                            muted: col("mu"),
+                            hover: col("hv"),
+                            soft: col("as"),
+                        });
+                        dark
+                    });
+                    if let Some(d) = host_dark {
+                        app.ui.brightness = if d { deckcraft_ui_egui::theme::Brightness::Dark } else { deckcraft_ui_egui::theme::Brightness::Light };
+                    }
                     crate::api::install(&mut app, cc.egui_ctx.clone());
                     Ok(Box::new(WebShell { app, inbox, bridge: app_bridge }))
                 }),
