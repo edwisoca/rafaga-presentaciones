@@ -29,7 +29,21 @@ pub(super) fn title_geometry(integrated: bool) -> (f32, f32, f32) {
 }
 
 /// The window's title row: traffic-light space, quick access, centred title, actions.
+/// Ráfaga: el anfitrión muestra el nombre y los botones de archivo en su propia barra y pide ocultar la de la app.
+static TITLE_BAR_HIDDEN: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+pub fn set_title_bar_hidden(hidden: bool) {
+    TITLE_BAR_HIDDEN.store(hidden, std::sync::atomic::Ordering::Relaxed);
+}
+
+pub fn title_bar_hidden() -> bool {
+    TITLE_BAR_HIDDEN.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 pub fn title_bar(app: &mut SlideApp, ui: &mut Ui) {
+    if title_bar_hidden() {
+        return;
+    }
     let t = Tokens::get(ui.ctx());
     let (height, left, control_h) = title_geometry(app.integrated_titlebar);
     egui::Panel::top("title_bar").exact_size(height).frame(egui::Frame::NONE.fill(t.chrome)).show(ui, |ui| {

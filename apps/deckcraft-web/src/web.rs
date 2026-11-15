@@ -79,6 +79,9 @@ pub fn start() {
                     {
                         crate::host::Bridge::set_author(&mut app, &author);
                     }
+                    if query_param("chrome").as_deref() == Some("notitlebar") {
+                        deckcraft_ui_egui::ribbon::title_bar::set_title_bar_hidden(true);
+                    }
                     // Ráfaga también pasa sus colores (`?theme=dark|light&ac=#rrggbb&…`): la app los usa en vez de los suyos.
                     let host_dark = query_param("theme").map(|mode| {
                         use deckcraft_ui_egui::theme::{self, HostTheme};
