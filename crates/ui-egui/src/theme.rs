@@ -148,6 +148,10 @@ pub struct HostTheme {
     pub muted: Option<Color32>,
     pub hover: Option<Color32>,
     pub soft: Option<Color32>,
+    /// La barra de color de Ráfaga: fondo, texto y color de la pestaña activa.
+    pub bar_bg: Option<Color32>,
+    pub bar_fg: Option<Color32>,
+    pub bar_hi: Option<Color32>,
 }
 
 static HOST_THEME: std::sync::OnceLock<HostTheme> = std::sync::OnceLock::new();
@@ -162,6 +166,28 @@ fn mix(a: Color32, b: Color32, t: f32) -> Color32 {
     let m = |x: u8, y: u8| (x as f32 + (y as f32 - x as f32) * t).round() as u8;
     Color32::from_rgb(m(a.r(), b.r()), m(a.g(), b.g()), m(a.b(), b.b()))
 }
+
+/// Ráfaga: la fila de pestañas toma los colores de la barra de color de Ráfaga (fondo, texto blanco, subrayado).
+pub fn strip_tokens(mut t: Tokens) -> Tokens {
+    let Some(h) = HOST_THEME.get() else { return t };
+    let (Some(bg), Some(fg)) = (h.bar_bg, h.bar_fg) else { return t };
+    let hi = h.bar_hi.unwrap_or(fg);
+    let dim = mix(fg, bg, 0.22);
+    let hov = mix(bg, fg, 0.16);
+    t.chrome = bg;
+    t.text = fg;
+    t.text_dim = dim;
+    t.accent = hi;
+    t.contextual = hi;
+    t.hover = hov;
+    t
+}
+
+/// El fondo de la fila de pestañas, si Ráfaga lo pidió.
+pub fn strip_bg() -> Option<Color32> {
+    HOST_THEME.get().and_then(|h| h.bar_bg.zip(h.bar_fg).map(|(b, _)| b))
+}
+
 
 fn host_override(mut t: Tokens) -> Tokens {
     let Some(h) = HOST_THEME.get() else { return t };

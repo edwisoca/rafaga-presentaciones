@@ -136,6 +136,12 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
     let h = 28.0 + if app.ui.ribbon_collapsed { 4.0 } else { RIBBON_H + 20.0 };
     egui::Panel::top("ribbon").exact_size(h).frame(egui::Frame::NONE.fill(t.chrome)).show(ui, |ui| {
         let rect = ui.max_rect();
+        // Ráfaga: la fila de pestañas es la barra de color de Ráfaga.
+        let card_t = t;
+        if let Some(bg) = theme::strip_bg() {
+            ui.painter().rect_filled(Rect::from_min_max(pos2(rect.min.x, rect.min.y), pos2(rect.max.x, rect.min.y + 29.0)), 0.0, bg);
+        }
+        let t = theme::strip_tokens(t);
         // Tabs. File comes first and opens the File tab's full-window view (Backstage), as in
         // PowerPoint.
         let mut x = rect.min.x + 12.0;
@@ -189,6 +195,7 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
         if app.ui.ribbon_collapsed {
             return;
         }
+        let t = card_t;
         // The white card.
         let card = Rect::from_min_max(pos2(rect.min.x + 8.0, rect.min.y + 30.0), pos2(rect.max.x - 8.0, rect.min.y + 30.0 + RIBBON_H + 10.0));
         ui.painter().rect_filled(card.translate(vec2(0.0, 1.0)), CornerRadius::same(10), t.card_border);
