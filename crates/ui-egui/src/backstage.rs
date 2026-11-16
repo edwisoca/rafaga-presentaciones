@@ -79,14 +79,14 @@ impl Page {
     /// Side-menu label and page heading.
     pub fn label(self) -> &'static str {
         match self {
-            Page::Home => "Home",
-            Page::New => "New",
-            Page::Open => "Open",
-            Page::Info => "Info",
-            Page::SaveAs => "Save As",
-            Page::Print => "Print",
-            Page::Export => "Export",
-            Page::About => "About",
+            Page::Home => "Inicio",
+            Page::New => "Nuevo",
+            Page::Open => "Abrir",
+            Page::Info => "Información",
+            Page::SaveAs => "Guardar como",
+            Page::Print => "Imprimir",
+            Page::Export => "Exportar",
+            Page::About => "Acerca de",
         }
     }
 
@@ -122,9 +122,9 @@ impl Nav {
     fn label(self) -> &'static str {
         match self {
             Nav::Page(p) => p.label(),
-            Nav::Save => "Save",
-            Nav::Close => "Close",
-            Nav::Options => "Options",
+            Nav::Save => "Guardar",
+            Nav::Close => "Cerrar",
+            Nav::Options => "Opciones",
         }
     }
     fn icon(self) -> Icon {
@@ -240,7 +240,8 @@ struct Outcome {
 /// Colours of the side menu and the page, from the theme: the menu sits a step darker than the
 /// page, as in PowerPoint.
 fn colours(t: &Tokens) -> (Color32, Color32) {
-    (t.chrome, t.card)
+    // La barra lateral lleva el color de la aplicación (naranja en Ráfaga), como en Documentos y Hojas.
+    (t.accent, t.card)
 }
 
 /// Runs a side-menu action. Returns the page to show, or None to close the view (Some(current)
@@ -336,13 +337,13 @@ pub fn show(app: &mut SlideApp, ui: &mut Ui) {
             resp.widget_info(|| egui::WidgetInfo::labeled(egui::Role::Button, true, "Back"));
             let hovered = resp.hovered();
             if hovered {
-                ui.painter().rect_filled(Rect::from_center_size(pos2(r.left() + 26.0, r.center().y), vec2(34.0, 34.0)), 17.0, t.hover);
+                ui.painter().rect_filled(Rect::from_center_size(pos2(r.left() + 26.0, r.center().y), vec2(34.0, 34.0)), 17.0, Color32::from_white_alpha(46));
             }
             icons::paint(
                 ui.painter(),
                 Rect::from_center_size(pos2(r.left() + 26.0, r.center().y), vec2(22.0, 22.0)),
                 Icon::BackCircle,
-                t.text,
+                Color32::WHITE,
                 false,
             );
             if resp.on_hover_text("Back (Esc)").clicked() {
@@ -444,14 +445,15 @@ fn nav_item(ui: &mut Ui, nav: Nav, bs: &Backstage, index: usize, t: &Tokens) -> 
     let p = ui.painter();
     let row = rect.shrink2(vec2(6.0, 1.0));
     if resp.hovered() {
-        p.rect_filled(row, CornerRadius::same(2), t.hover);
+        p.rect_filled(row, CornerRadius::same(2), Color32::from_white_alpha(40));
     }
-    if bs.focus == Some(index) || selected {
-        // The current page (and the keyboard focus) is outlined, as in PowerPoint.
-        let ink = if bs.focus == Some(index) { t.text } else { t.border };
-        p.rect_stroke(row, CornerRadius::same(2), Stroke::new(1.0, ink), StrokeKind::Inside);
+    if selected {
+        p.rect_filled(row, CornerRadius::same(2), Color32::from_white_alpha(56));
     }
-    let ink = if selected { t.accent } else { t.text };
+    if bs.focus == Some(index) {
+        p.rect_stroke(row, CornerRadius::same(2), Stroke::new(1.0, Color32::WHITE), StrokeKind::Inside);
+    }
+    let ink = Color32::WHITE;
     icons::paint(p, Rect::from_center_size(pos2(rect.left() + 26.0, rect.center().y), vec2(16.0, 16.0)), nav.icon(), ink, false);
     p.text(pos2(rect.left() + 44.0, rect.center().y), Align2::LEFT_CENTER, label, theme::font(13.0), ink);
     resp
@@ -460,7 +462,8 @@ fn nav_item(ui: &mut Ui, nav: Nav, bs: &Backstage, index: usize, t: &Tokens) -> 
 fn separator(ui: &mut Ui, t: &Tokens) {
     let (rect, _) = ui.allocate_exact_size(vec2(NAV_W, 13.0), Sense::hover());
     let y = rect.center().y;
-    ui.painter().line_segment([pos2(rect.left() + 20.0, y), pos2(rect.right() - 14.0, y)], Stroke::new(1.0, t.separator));
+    let _ = t;
+    ui.painter().line_segment([pos2(rect.left() + 20.0, y), pos2(rect.right() - 14.0, y)], Stroke::new(1.0, Color32::from_white_alpha(90)));
 }
 
 // ---------------------------------------------------------------- shared pieces
