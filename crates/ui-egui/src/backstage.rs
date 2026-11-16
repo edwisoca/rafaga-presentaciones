@@ -30,7 +30,7 @@ use print::{export, print};
 pub use print::{print_page_size, print_params, print_slides};
 
 /// Width of the side menu.
-pub const NAV_W: f32 = 160.0;
+pub const NAV_W: f32 = 196.0;
 /// Height of a side-menu entry (the back arrow's row is a little taller).
 const ITEM_H: f32 = 40.0;
 const BACK_H: f32 = 46.0;
